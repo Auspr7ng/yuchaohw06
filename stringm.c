@@ -134,43 +134,54 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     size_t pattern_len = strlen_m(pattern);
     size_t replacement_len = strlen_m(replacement);
 
+    /* pattern 为空：不做替换，返回拷贝 */
     if (pattern_len == 0) {
         char *copy = (char *)malloc(string_len + 1);
         if (!copy) return NULL;
-        for (size_t i = 0; i < string_len; i++) {
-            copy[i] = string[i];
-        }
+        for (size_t i = 0; i < string_len; i++) copy[i] = string[i];
         copy[string_len] = '\0';
         return copy;
     }
 
+    /* 第一遍：统计出现次数 */
     size_t count = 0;
     const char *p = string;
     const char *match = NULL;
     while ((match = strstr_m(p, pattern)) != NULL) {
         count++;
-        p = match + pattern_len;
+        p = match + pattern_len; /* 不重叠替换 */
     }
 
-    size_t new_len = string_len + count * (replacement_len - pattern_len);
+    /* 计算新长度：避免无符号下溢 */
+    size_t new_len = string_len;
+    if (count > 0) {
+        if (replacement_len >= pattern_len) {
+            size_t add = replacement_len - pattern_len;
+            /* 简单溢出防护（可选） */
+            if (add != 0 && count > (SIZE_MAX - new_len) / add) return NULL;
+            new_len += count * add;
+        } else {
+            size_t sub = pattern_len - replacement_len;
+            new_len -= count * sub;
+        }
+    }
+
     char *out = (char *)malloc(new_len + 1);
     if (!out) return NULL;
 
+    /* 第二遍：构造新串 */
     const char *src = string;
     size_t pos = 0;
     while ((match = strstr_m(src, pattern)) != NULL) {
+        /* 拷贝 [src, match) */
         const char *q = src;
-        while (q < match) {
-            out[pos++] = *q++;
-        }
-        for (size_t i = 0; i < replacement_len; i++) {
-            out[pos++] = replacement[i];
-        }
+        while (q < match) out[pos++] = *q++;
+        /* 写入 replacement */
+        for (size_t i = 0; i < replacement_len; i++) out[pos++] = replacement[i];
         src = match + pattern_len;
     }
-    while (*src) {
-        out[pos++] = *src++;
-    }
+    /* 尾巴 */
+    while (*src) out[pos++] = *src++;
     out[pos] = '\0';
     return out;
 }
