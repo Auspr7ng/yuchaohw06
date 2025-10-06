@@ -126,8 +126,47 @@ Strings split_m(const char *string, const char *pattern)
     Strings result;
     result.strings = NULL;
     result.num_strings = 0;
+
+    size_t pat_len = strlen_m(pattern);
+
+    if (pat_len == 0) {
+        result.strings = (char **)malloc(sizeof(char *));
+        if (!result.strings) return result;
+        size_t len = strlen_m(string);
+        result.strings[0] = strncpy_m(string, len);
+        result.num_strings = 1;
+        return result;
+    }
+
+    size_t count = 0;
+    const char *p = string;
+    const char *hit = NULL;
+    while ((hit = strstr_m(p, pattern)) != NULL) {
+        count++;
+        p = hit + pat_len;
+    }
+
+    size_t parts = count + 1;
+    result.strings = (char **)malloc(parts * sizeof(char *));
+    if (!result.strings) {
+        result.num_strings = 0;
+        return result;
+    }
+
+    p = string;
+    size_t idx = 0;
+    while ((hit = strstr_m(p, pattern)) != NULL) {
+        size_t seg_len = (size_t)(hit - p);   /* 指针相减得到段长 */
+        result.strings[idx++] = strncpy_m(p, seg_len);
+        p = hit + pat_len;
+    }
+    size_t tail_len = strlen_m(p);
+    result.strings[idx++] = strncpy_m(p, tail_len);
+
+    result.num_strings = (int)parts;
     return result;
 }
+
 
 /*
 ** find_and_replace_all_m finds each occurence of the pattern in the string and replaces it
