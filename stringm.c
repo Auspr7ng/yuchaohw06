@@ -33,13 +33,19 @@ size_t strlen_m(const char *string)
 */
 char *strncpy_m(const char *string, size_t n)
 {
-    char *copy = malloc(n + 1);
-    for (size_t i = 0; i < n; i++) {
+    size_t src_len = strlen_m(string);
+    size_t count = (src_len < n) ? src_len : n;
+
+    char *copy = (char *)malloc(count + 1);
+    if (!copy) return NULL;
+
+    for (size_t i = 0; i < count; i++) {
         copy[i] = string[i];
     }
-    copy[n] = '\0';
+    copy[count] = '\0';
     return copy;
 }
+
 
 /*
 ** join_m joins an array of strings separated by a delimiter
@@ -52,11 +58,16 @@ char *strncpy_m(const char *string, size_t n)
 */
 char *join_m(Strings strings, const char *delimiter)
 {
+    if (strings.num_strings == 0) return NULL;
+
     size_t delimiter_len = strlen_m(delimiter);
     size_t total_length = 0;
+
     for (int i = 0; i < strings.num_strings; i++) {
         total_length += strlen_m(strings.strings[i]);
-        if (i < strings.num_strings - 1) total_length += delimiter_len;
+        if (i < strings.num_strings - 1) {
+            total_length += delimiter_len;
+        }
     }
 
     char *joined = (char *)malloc(total_length + 1);
@@ -77,6 +88,7 @@ char *join_m(Strings strings, const char *delimiter)
     joined[pos] = '\0';
     return joined;
 }
+
 
 /*
 ** free_strings frees all allocated elements in strings
