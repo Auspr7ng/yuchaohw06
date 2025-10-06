@@ -15,7 +15,11 @@
 */
 size_t strlen_m(const char *string)
 {
-    return 0;
+    size_t length = 0;
+    while (string[length] != '\0') {
+        length++;
+    }
+    return length;
 }
 
 /*
@@ -29,7 +33,12 @@ size_t strlen_m(const char *string)
 */
 char *strncpy_m(const char *string, size_t n)
 {
-    return NULL;
+    char *copy = malloc(n + 1);
+    for (size_t i = 0; i < n; i++) {
+        copy[i] = string[i];
+    }
+    copy[n] = '\0';
+    return copy;
 }
 
 /*
@@ -43,7 +52,30 @@ char *strncpy_m(const char *string, size_t n)
 */
 char *join_m(Strings strings, const char *delimiter)
 {
-    return NULL;
+    size_t delimiter_len = strlen_m(delimiter);
+    size_t total_length = 0;
+    for (int i = 0; i < strings.num_strings; i++) {
+        total_length += strlen_m(strings.strings[i]);
+        if (i < strings.num_strings - 1) total_length += delimiter_len;
+    }
+
+    char *joined = (char *)malloc(total_length + 1);
+    if (!joined) return NULL;
+
+    size_t pos = 0;
+    for (int i = 0; i < strings.num_strings; i++) {
+        const char *s = strings.strings[i];
+        for (size_t j = 0; s[j] != '\0'; j++) {
+            joined[pos++] = s[j];
+        }
+        if (i < strings.num_strings - 1) {
+            for (size_t k = 0; k < delimiter_len; k++) {
+                joined[pos++] = delimiter[k];
+            }
+        }
+    }
+    joined[pos] = '\0';
+    return joined;
 }
 
 /*
@@ -52,7 +84,10 @@ char *join_m(Strings strings, const char *delimiter)
 */
 void free_strings(Strings strings)
 {
-
+    for (int i = 0; i < strings.num_strings; i++) {
+        free(strings.strings[i]);
+    }
+    free(strings.strings);
 }
 
 /*
@@ -76,7 +111,9 @@ void free_strings(Strings strings)
 */
 Strings split_m(const char *string, const char *pattern)
 {
-    Strings result = { .num_strings = 0, .strings = NULL };
+    Strings result;
+    result.strings = NULL;
+    result.num_strings = 0;
     return result;
 }
 
@@ -93,8 +130,51 @@ Strings split_m(const char *string, const char *pattern)
 */
 char *find_and_replace_all_m(const char *string, const char *pattern, const char *replacement)
 {
-    return NULL;
+    size_t string_len = strlen_m(string);
+    size_t pattern_len = strlen_m(pattern);
+    size_t replacement_len = strlen_m(replacement);
+
+    if (pattern_len == 0) {
+        char *copy = (char *)malloc(string_len + 1);
+        if (!copy) return NULL;
+        for (size_t i = 0; i < string_len; i++) {
+            copy[i] = string[i];
+        }
+        copy[string_len] = '\0';
+        return copy;
+    }
+
+    size_t count = 0;
+    const char *p = string;
+    const char *match = NULL;
+    while ((match = strstr_m(p, pattern)) != NULL) {
+        count++;
+        p = match + pattern_len;
+    }
+
+    size_t new_len = string_len + count * (replacement_len - pattern_len);
+    char *out = (char *)malloc(new_len + 1);
+    if (!out) return NULL;
+
+    const char *src = string;
+    size_t pos = 0;
+    while ((match = strstr_m(src, pattern)) != NULL) {
+        const char *q = src;
+        while (q < match) {
+            out[pos++] = *q++;
+        }
+        for (size_t i = 0; i < replacement_len; i++) {
+            out[pos++] = replacement[i];
+        }
+        src = match + pattern_len;
+    }
+    while (*src) {
+        out[pos++] = *src++;
+    }
+    out[pos] = '\0';
+    return out;
 }
+
 
 /*
 ** The strstr function is implemented for you to use -- DO NOT MODIFY
